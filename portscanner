@@ -1,0 +1,126 @@
+#!/usr/bin/perl
+
+use IO::Socket;
+use Net::Ping;
+$pingcount=0;
+$count=0;
+$ipcount=1;
+$startport=1;
+$lastport=65500;
+$onlypingcount=0;
+if(@ARGV[0]=~/-/)
+{
+ if(@ARGV[0]=~/t/i)
+ {
+   print "startport : ";
+   $startport=<STDIN>;
+   print "lastport : ";
+   $lastport=<STDIN>;
+   if($startport>$lastport)
+   {
+    print "lastport big!!!!(error)\n";
+    return 0;
+   }
+ }
+ if(@ARGV[0]=~/o/i)
+ {
+  $onlypingcount+=1;
+  $onlyping=Net::Ping->new("icmp");
+ }
+ if(@ARGV[0]=~/c/i)
+ {
+  print "socket count : ";
+  $selectcount=<STDIN>;
+ }
+ if(@ARGV[0]=~/h/i)
+ {
+  print "[default] not option\n";
+  print "-t	startport~lastport select.\n";
+  print "-p	ping message.(just one or add option)\n";
+  print "-add	ipaddress add.\n";
+  print "-c	socket count.\n";
+  print "-o	only scan responsive pings.\n";
+  return ; 
+ }
+ if(@ARGV[0]=~/add/i)
+ {
+  print "ip number : ";
+  $ipcount=<STDIN>;
+ }
+ if(@ARGV[0]=~/p/i)
+ {
+  $pingcount=1;
+  $pingmessage=Net::Ping->new("icmp");
+  for($ipnumber=0;$ipnumber<$ipcount;$ipnumber+=1)
+  {
+   print "target ip : ";
+   $targetip[$ipnumber]=<STDIN>;
+  }
+  for($ipnumber=0;$ipnumber<$ipcount;$ipnumber+=1)
+  {
+   if($pingmessage->ping($targetip[$ipnumber]))
+   {
+    print "$targetip[$ipnumber].....    ";
+    print "response OK!!.\n";
+   }
+   else
+   {
+    print "$targetip[$ipnumber].....    ";
+    print "Not response.....\n";
+   }
+  }
+ }
+ 
+}
+if($pingcount!=1)
+{
+for($ipnumber=0;$ipnumber<$ipcount;$ipnumber+=1)
+{
+ print "target IP : ";
+ $targetip[$ipnumber]=<STDIN>;
+}
+for($ipnumber=0;$ipnumber<$ipcount;$ipnumber+=1)
+{
+ if($onlypingcount!=1)
+ {
+  print $targetip[$ipnumber]." Port Scanning.\n";
+  for($port=$startport;$port<=$lastport;$port+=1)
+  {
+    $sock=IO::Socket::INET->new(PeerAddr=>$targetip[$ipnumber],PeerPort=>$port,Proto=>'tcp' ,Timeout=>1);
+    if($sock)
+    {
+      $count+=1;
+      if($count==$selectcount)
+      {
+       $port=$lastport+1; 
+      }
+      print "port open : $port\n";
+    }
+  }
+ }
+ else
+ {
+  if($onlyping->ping($targetip[$ipnumber]))
+  {
+   print "$targetip[$ipnumber] Port Scanning.\n";
+   for($port=$startport;$port<=$lastport;$port+=1)
+   {
+   $sock=IO::Socket::INET->new(PeerAddr=>$targetip[$ipnumber],PeerPort=>$port,Proto=>'tcp',Timeout=>1);
+   if($sock)
+   {
+    $count+=1;
+    if($count==$selectcount)
+    {
+     $port=$lastport+1;
+    }
+    print "port open : $port\n";
+   }
+   }
+  }
+  else
+  {
+   print "$targetip[$ipnumber] not response.\n";
+  }
+ } 
+}
+}
